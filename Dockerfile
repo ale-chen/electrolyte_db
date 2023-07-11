@@ -7,12 +7,26 @@ WORKDIR /app
 ADD . /app
 COPY ./requirements.txt /electro_app/requirements.txt
 
+RUN apt-get update && apt-get install -y git
 RUN pip install --no-cache-dir --upgrade -r /electro_app/requirements.txt
-RUN pwd
 
-COPY static /app/static
+ARG SSH_PRIVATE_KEY
+RUN mkdir -p /root/.ssh
+RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_ed25519
+RUN chmod 600 /root/.ssh/id_ed25519
+RUN touch /root/.ssh/known_hosts
+RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+RUN mkdir my_project
+WORKDIR /app/my_project
+RUN git clone git@github.com:ale-chen/electrolyte_db.git .
+
+#COPY static /app/static
+WORKDIR /app/my_project/app
 #COPY templates /app/templates
 
-EXPOSE 80
+EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+RUN pip install tools
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
