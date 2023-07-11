@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  web:
+    build: 
+      context: .
+      args:
+        - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
+    ports:
+      - "8000:8000"
