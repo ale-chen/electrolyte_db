@@ -27,6 +27,6 @@ WORKDIR /app/my_project/app
 
 EXPOSE 8000
 
-RUN pip install tools
+RUN chmod +x start.sh
 
-CMD ["/app/start.sh"]
+CMD ["./start.sh"]

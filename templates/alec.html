@@ -139,39 +139,43 @@
                     </div>
                     <div class="input-group">
                         <label for="conductivity">Conductivity:</label><br>
-                        <input type="number" id="conductivity" name="conductivity" step="any"><br>
+                        <text><em>micro-siemens/cm</em></text><br>
+                        <input type="text" id="conductivity" name="conductivity" step="any"><br>
                     </div>
                     <div class="input-group">
                         <label for="conduct_uncert_bound">Conductivity Uncertainty Bound:</label><br>
-                        <input type="number" id="conduct_uncert_bound" name="conduct_uncert_bound" step="any"><br>
+                        <input type="text" id="conduct_uncert_bound" name="conduct_uncert_bound" step="any"><br>
                     </div>
                     <div class="input-group">
-                        <label for="concent_uncert_bound">Concentration Uncertainty Bound:</label><br>
-                        <input type="number" id="concent_uncert_bound" name="concent_uncert_bound" step="any"><br>
+                        <label for="concent_uncert_bound">Concentration Uncertainty Bound (molal):</label><br>
+                        <input type="text" id="concent_uncert_bound" name="concent_uncert_bound" step="any"><br>
                     </div>
                     <div class="input-group">
-                        <label for="density">Density (Optional):</label><br>
-                        <input type="number" id="density" name="density" step="any"><br>
+                        <label for="density">Density (g/mL, Optional):</label><br>
+                        <input type="text" id="density" name="density" step="any"><br>
                     </div>
                     <div class="input-group">
-                        <label for="temperature">Temperature (Optional):</label><br>
-                        <input type="number" id="temperature" name="temperature" step="any"><br>
+                        <label for="temperature">Temperature (Celsius, Optional):</label><br>
+                        <input type="text" id="temperature" name="temperature" step="any"><br>
                     </div>
                     <div class="input-group">
-                        <label for="viscocity">Viscocity (Optional):</label><br>
-                        <input type="number" id="viscocity" name="viscocity" step="any"><br>
+                        <label for="viscocity">Viscocity (mPa*s, Optional):</label><br>
+                        <input type="text" id="viscocity" name="viscocity" step="any"><br>
                     </div>
                     <div class="input-group">
                         <label for="v_window_low_bound">Voltage Window Lower Bound (Optional):</label><br>
-                        <input type="number" id="v_window_low_bound" name="v_window_low_bound" step="any"><br>
+                        <text><em>V. vs. fc+/fc</em></text><br>
+                        <input type="text" id="v_window_low_bound" name="v_window_low_bound" step="any"><br>
                     </div>
                     <div class="input-group">
                         <label for="v_window_high_bound">Voltage Window Upper Bound (Optional):</label><br>
-                        <input type="number" id="v_window_high_bound" name="v_window_high_bound" step="any"><br>
+                        <text><em>V. vs. fc+/fc</em></text><br>
+                        <input type="text" id="v_window_high_bound" name="v_window_high_bound" step="any"><br>
                     </div>
                     <div class="input-group">
                         <label for="surface_tension">Surface Tension (Optional):</label><br>
-                        <input type="number" id="surface_tension" name="surface_tension" step="any"><br>
+                        <text><em>J/m^2, across air</em></text>
+                        <input type="text" id="surface_tension" name="surface_tension" step="any"><br>
                     </div>
                     <input type="submit" value="Submit">
                 </form>
