@@ -127,13 +127,15 @@
             <div>
                 <form action="/input_electrolyte/" method="post">
                     <h1>Input Electrolyte Data</h1>
+                        <text><em>Components should be separated by spaces, and should correspond in order to amounts below.</em></text><br>
                     <div class="input-group">
                         <label for="component_types">Component Types:</label><br>
-                        <input type="text" id="component_types" name="component_types"><br>
+                        <input type="text" id="component_types" name="component_types" placeholder="CaCl2 Ca(ClO4)2..."><br>
                     </div>
                     <div class="input-group">
                         <label for="amounts">Amounts:</label><br>
-                        <input type="text" id="amounts" name="amounts"><br>
+                        <text><em>Salts in g, and solvents in mL</em></text>
+                        <input type="text" id="amounts" name="amounts" placeholder=".75 3..."><br>
                     </div>
                     <div class="input-group">
                         <label for="conductivity">Conductivity:</label><br>
