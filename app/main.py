@@ -1,4 +1,4 @@
-#FIX MOLALITY INTO MOLARITY
+#FIX molar_mass INTO MOLARITY
 
 import sqlite3
 import re
@@ -30,7 +30,7 @@ def start_server():
             (
             id INTEGER PRIMARY KEY,
             formula TEXT,
-            molality REAL,
+            molar_mass REAL,
             price REAL
             );
             ''')
@@ -75,9 +75,9 @@ class Chemical:
     'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm',
     'Bk','Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt',
      'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
-    def __init__(self, formula=' ', molality=0, price=0):
+    def __init__(self, formula=' ', molar_mass=0, price=0):
         self.elements = self.parse_formula(formula)
-        self.molality = molality
+        self.molar_mass = molar_mass
         self.price = price # PRICE IS IN TERMS OF $/ML AND $/G
 
     def parse_formula(self, formula): #recursive function to parse equivalent formulas
@@ -293,7 +293,7 @@ def add_component_type(
     if(len(rows) != 0):
       print(f'{str(len(rows))} entries with formula {chemical.__str__()} already in database')
     else:
-      c.execute("INSERT INTO components (formula, molality, price) VALUES (?,?,?)", (str(chemical), chemical.molality, chemical.price))
+      c.execute("INSERT INTO components (formula, molar_mass, price) VALUES (?,?,?)", (str(chemical), chemical.molar_mass, chemical.price))
       conn.commit()
       conn.close()
 
@@ -430,12 +430,12 @@ async def input_electrolyte_form(request: Request, message: Optional[str] = None
 async def input_component(
     request: Request, #NONE OF THESE ARE ACTUALLY OPTIONAL, FASTAPI IS JUST WEIRD
     formula: Optional[str] = Form(...),
-    molality: Optional[float] = Form(...),
+    molar_mass: Optional[float] = Form(...),
     price: Optional[float] = Form(...)
 ):
     try:
         response_str = 'Success!'
-        component = Chemical(formula, molality, price)
+        component = Chemical(formula, molar_mass, price)
         add_component_type(component)
 
     except Exception as e:
