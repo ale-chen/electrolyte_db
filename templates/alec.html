@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="{{ url_for('static') }}" />
+        <img src="{{ url_for('static', path='assets/header.png') }}"
+         
+	        style="
+                object-fit:scale-down;
+                width: 300px;
+                height: auto;
+                margin-bottom: 20px;
+                "
+            alt="Chement Logo Missing"/>
+        <title>Input Electrolyte</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                background-color: #F3F3F3;
+            }
+    
+            .container {
+                display: flex;
+                justify-content: space-between;
+            }
+            .container > div {
+                margin: 0 5px;
+                flex-basis: 30%;
+            }
+            /*
+            form, #results-table {
+                flex-basis: 45%;
+            }
+            */
+            form {
+                display: flex;
+                flex-direction: column;
+                background-color: white;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+    
+            .input-group {
+                margin-bottom: 1em;
+            }
+    
+            label {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+    
+            input[type="text"] {
+                padding: 10px;
+                border: 1px solid #DDDDDD;
+                border-radius: 5px;
+                font-size: 16px;
+            }
+    
+            input[type="submit"] {
+                background-color: #4CAF50;
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                margin: 4px 2px;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+    
+            .message {
+                margin-top: 20px;
+                padding: 10px;
+                border-radius: 5px;
+                background-color: #FFDDDD;
+                color: red;
+            }
+            #message-box {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                background-color: #f9f9f9;
+                border: 1px solid #ccc;
+                padding: 10px;
+                text-align: center;
+            }
+            #results-table {
+                margin-top: 20px;
+            }
+
+            #results-table table {
+                border-collapse: collapse;
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            .results-present {
+                background-color: white; /* Set the background color of the table */
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+
+            #results-table th, #results-table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+
+            #results-table tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+            #results-table th {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                text-align: left;
+                background-color: #4CAF50;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div>
+                <form action="/input_electrolyte/" method="post">
+                    <h1>Input Electrolyte Data</h1>
+                    <div class="input-group">
+                        <label for="component_types">Component Types:</label><br>
+                        <input type="text" id="component_types" name="component_types"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="amounts">Amounts:</label><br>
+                        <input type="text" id="amounts" name="amounts"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="conductivity">Conductivity:</label><br>
+                        <input type="number" id="conductivity" name="conductivity" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="conduct_uncert_bound">Conductivity Uncertainty Bound:</label><br>
+                        <input type="number" id="conduct_uncert_bound" name="conduct_uncert_bound" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="concent_uncert_bound">Concentration Uncertainty Bound:</label><br>
+                        <input type="number" id="concent_uncert_bound" name="concent_uncert_bound" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="density">Density (Optional):</label><br>
+                        <input type="number" id="density" name="density" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="temperature">Temperature (Optional):</label><br>
+                        <input type="number" id="temperature" name="temperature" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="viscocity">Viscocity (Optional):</label><br>
+                        <input type="number" id="viscocity" name="viscocity" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="v_window_low_bound">Voltage Window Lower Bound (Optional):</label><br>
+                        <input type="number" id="v_window_low_bound" name="v_window_low_bound" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="v_window_high_bound">Voltage Window Upper Bound (Optional):</label><br>
+                        <input type="number" id="v_window_high_bound" name="v_window_high_bound" step="any"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="surface_tension">Surface Tension (Optional):</label><br>
+                        <input type="number" id="surface_tension" name="surface_tension" step="any"><br>
+                    </div>
+                    <input type="submit" value="Submit">
+                </form>
+                {% if message %}
+                <div id="message-box">
+                    {{ message }}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <form action="/input_component/" method="post">
+                    <h1>Input Component Data</h1>
+                    <div class="input-group">
+                        <label for="formula">Chemical Formula:</label><br>
+                        <input type="text" id="formula" name="formula"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="molality">Molality (mol/kg):</label><br>
+                        <input type="number" id="molality" name="molality"><br>
+                    </div>
+                    <div class="input-group">
+                        <label for="price">Price ($/mL or $/g):</label><br>
+                        <input type="number" id="price" name="price" step="any"><br>
+                    </div>
+                    <input type="submit" value="Submit">
+                </form>
+                {% if message %}
+                <div id="message-box">
+                    {{ message }}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+
+                <form id="sql-form" action="/execute_sql/" method="post" style="max-height: 240px; overflow-y: auto;">
+                    <h1>Execute SQL Query</h2>
+                    <div class="input-group">
+                        <label for="sql_query">SQL Query:</label><br>
+                        <input type="text" id="sql_query" name="sql_query" style="max-width: 500px"><br>
+                    </div>
+                    <input type="submit" value="Submit">
+                    <button id="download-btn">Download Excel</button>
+                    <script>
+                        document.querySelector('#download-btn').addEventListener('click', function(event) {
+                            // Prevent the button from submitting a form
+                            event.preventDefault();
+
+                            // Send a GET request to the server to download the Excel file
+                            window.location.href = '/download_excel/';
+                        });
+                    </script>
+                </form>
+                <div id="results-table"></div>
+            </div>
+
+        </div>
+        <script>
+            document.querySelector('#sql-form').addEventListener('submit', function(event) {
+                // Prevent the form from being submitted normally
+                event.preventDefault();
+            
+                // Get the SQL query from the form
+                const sqlQuery = document.querySelector('#sql_query').value;
+            
+                // Send the SQL query to the server
+                fetch('/execute_sql/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'sql_query=' + encodeURIComponent(sqlQuery),
+                })
+                .then(response => response.json())
+                .then(results => {
+                    // Create a new table
+                    const table = document.createElement('table');
+
+                    // Create a header row
+                    const headerRow = document.createElement('tr');
+                    for (const key in results[0]) {
+                        const th = document.createElement('th');
+                        th.textContent = key;
+                        headerRow.appendChild(th);
+                    }
+                    table.appendChild(headerRow);
+
+                    // Add a row to the table for each result
+                    for (const result of results) {
+                        const row = document.createElement('tr');
+
+                        // Add a cell to the row for each field in the result
+                        for (const field in result) {
+                            const cell = document.createElement('td');
+                            cell.textContent = result[field];
+                            row.appendChild(cell);
+                        }
+
+                        table.appendChild(row);
+                    }
+
+                    // Add the table to the page
+                    const resultsDiv = document.querySelector('#results-table');
+                    resultsDiv.innerHTML = ''; // Remove any existing table
+                    resultsDiv.appendChild(table);
+                    
+                    // Add the .results-present class to the results div
+                    resultsDiv.classList.add('results-present');
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        </script>
+            
+    </body>
+
+        
+        
+</html>
