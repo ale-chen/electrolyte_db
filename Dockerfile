@@ -29,4 +29,4 @@ EXPOSE 8000
 
 RUN pip install tools
 
-CMD ["./start.sh"]
+CMD ["/app/start.sh"]
