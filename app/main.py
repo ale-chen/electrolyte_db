@@ -1,4 +1,5 @@
-#FIX molar_mass INTO MOLARITY
+#ADD TEXT NOTE BOX FOR COMPONENTS TABLE
+#MULTILINE COMMENTS FOR FUNCTIONS
 
 import sqlite3
 import re
@@ -20,6 +21,10 @@ from urllib.parse import quote
 DB = 'experiment_db.sqlite'
 
 def start_server():
+    '''
+    used in test.py to start sqlite server with tables
+    '''
+
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
@@ -30,6 +35,7 @@ def start_server():
             (
             id INTEGER PRIMARY KEY,
             formula TEXT,
+            notes TEXT,
             molar_mass REAL,
             price REAL
             );
@@ -66,6 +72,10 @@ def start_server():
     ''')
 
 class Chemical:
+    '''
+    Object to process chemical component types; takes in chemical formulas, and stores dictionary, 'elements,'
+    with counts of each element.
+    '''
     ELEMENTS = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg'
     , 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn',
     'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr','Rb', 'Sr',
@@ -75,12 +85,19 @@ class Chemical:
     'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm',
     'Bk','Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt',
      'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
-    def __init__(self, formula=' ', molar_mass=0, price=0):
+    def __init__(self, formula=' ', notes='', molar_mass=0, price=0):
         self.elements = self.parse_formula(formula)
+        self.notes = notes
         self.molar_mass = molar_mass
         self.price = price # PRICE IS IN TERMS OF $/ML AND $/G
 
     def parse_formula(self, formula): #recursive function to parse equivalent formulas
+        '''
+        Recursively parses through a formula string, accounting for parentheses and different orderings for elements.
+        Returns a 'Counter' object, which is really just a dictionary with elements on the left, and amounts on the
+        right.
+        '''
+
         elements = Counter()
         i = 0
         while i < len(formula):
@@ -125,15 +142,25 @@ class Chemical:
         return elements
 
     def __eq__(self, other):
+        '''
+        equivalence check which compares elements.
+        '''
         if isinstance(other, Chemical):
             return self.elements == other.elements
         return False
 
-    def __str__(self):#outputs formula with elements sorted by element number
+    def __str__(self):
+        '''
+        outputs formula as a string with elements sorted by element number
+        '''
         sorted_elements = sorted(self.elements.items(), key=lambda x: self.ELEMENTS.index(x[0]))
         return ''.join(f'{element}{count}' if count > 1 else f'{element}' for element, count in sorted_elements)
 
 def get_electrolyte_by_components(components: dict):
+    '''
+    takes in dictionary of components and amounts, ex: {"formula1": 3.23, "formula2": .57}
+    returns id of an electrolyte.
+    '''
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
@@ -178,6 +205,8 @@ def add_electrolyte(components: dict,
                     ):
     """
     components: dict of chemical formula and amount; e.g. {str: float, ...}
+
+    adds a new electrolyte to database with components as dictionary
     """
     if(check_electrolyte_exists(components)):
         raise ValueError(f'Electrolyte with formula {components} already exists')
@@ -233,6 +262,10 @@ def add_electrolyte(components: dict,
     conn.close()
 
 def check_electrolyte_exists(components: dict):
+    '''
+    Checks if an electrolyte with matching components and amounts already exists in the dictionary.
+    '''
+
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
@@ -261,6 +294,9 @@ def check_electrolyte_exists(components: dict):
     return len(candidate_ids) > 0
 
 def get_components_by_id(electrolyte_id):
+    '''
+    takes in electrolyte id, and returns dictionary of components and amounts per component
+    '''
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
@@ -282,6 +318,9 @@ def get_components_by_id(electrolyte_id):
 def add_component_type(
     chemical: Chemical
 ):
+    '''
+    self-evident--only takes in Chemical class
+    '''
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
@@ -293,13 +332,16 @@ def add_component_type(
     if(len(rows) != 0):
       print(f'{str(len(rows))} entries with formula {chemical.__str__()} already in database')
     else:
-      c.execute("INSERT INTO components (formula, molar_mass, price) VALUES (?,?,?)", (str(chemical), chemical.molar_mass, chemical.price))
+      c.execute("INSERT INTO components (formula, notes, molar_mass, price) VALUES (?,?,?,?)", (str(chemical),chemical.notes, chemical.molar_mass, chemical.price))
       conn.commit()
       conn.close()
 
 def get_component_type(
     formula: str
 ):
+    '''
+    returns chemical type of a component, from just its formula.
+    '''
     formatted_formula = Chemical(formula).__str__()
 
     conn = sqlite3.connect(DB)
@@ -314,14 +356,17 @@ def get_component_type(
     elif len(rows) == 0:
         print(f'No components found for formula {formula}')
     else:
-        print(rows[0][1], rows[0][2], rows[0][3])
-        return Chemical(rows[0][1], rows[0][2], rows[0][3])
+        print(rows[0][1], rows[0][2], rows[0][3], rows[0][4])
+        return Chemical(rows[0][1], rows[0][2], rows[0][3], rows[0][4])
     
     conn.close()
 
 def remove_component_type(
     formula: str
 ):
+    '''
+    removes component from table just from formula
+    '''
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
@@ -430,12 +475,13 @@ async def input_electrolyte_form(request: Request, message: Optional[str] = None
 async def input_component(
     request: Request, #NONE OF THESE ARE ACTUALLY OPTIONAL, FASTAPI IS JUST WEIRD
     formula: Optional[str] = Form(...),
+    notes: Optional[str] = Form(None),
     molar_mass: Optional[float] = Form(...),
     price: Optional[float] = Form(...)
 ):
     try:
         response_str = 'Success!'
-        component = Chemical(formula, molar_mass, price)
+        component = Chemical(formula, notes, molar_mass, price)
         add_component_type(component)
 
     except Exception as e:
