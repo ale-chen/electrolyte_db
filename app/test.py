@@ -24,6 +24,7 @@ def start_server():
             (
             id INTEGER PRIMARY KEY,
             formula TEXT,
+            notes TEXT,
             molar_mass REAL,
             price REAL
             );
@@ -58,6 +59,8 @@ def start_server():
         surface_tension REAL
     );
     ''')
+    conn.commit()
+    conn.close()
 
 class Chemical:
     ELEMENTS = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg'

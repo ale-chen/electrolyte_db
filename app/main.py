@@ -70,6 +70,8 @@ def start_server():
         surface_tension REAL
     );
     ''')
+    conn.commit()
+    conn.close()
 
 class Chemical:
     '''
@@ -184,6 +186,7 @@ def get_electrolyte_by_components(components: dict):
         c.execute("SELECT COUNT(*) FROM Electrolyte_Components WHERE Electrolyte_ID = ?", (id,))
         if c.fetchone()[0] != len(components):
             candidate_ids.remove(id)
+    conn.commit()
     conn.close()
     
     if(len(candidate_ids) > 1):
@@ -288,6 +291,7 @@ def check_electrolyte_exists(components: dict):
         c.execute("SELECT COUNT(*) FROM Electrolyte_Components WHERE Electrolyte_ID = ?", (id,))
         if c.fetchone()[0] != len(components):
             candidate_ids.remove(id)
+    conn.commit()
     conn.close()
 
     # If we have at least one result, the electrolyte exists
@@ -503,6 +507,7 @@ async def execute_sql(sql_query: str = Form(...)):
     c = conn.cursor()
     c.execute(sql_query)
     results = c.fetchall()
+    conn.commit()
     conn.close()
     return JSONResponse(content=results)
 
