@@ -233,7 +233,18 @@
                     </script>
                 </form>
                 <div id="results-table"></div>
+                <form id="excel-form" action="/upload_excel/" method="post" enctype="multipart/form-data">
+                    <h1>Upload Excel File</h1>
+                    <div class="input-group">
+                        <label for="file">Excel File:</label><br>
+                        <input type="file" id="file" name="file"><br>
+                    </div>
+                    <input type="submit" value="Upload">
+                </form>
+                
             </div>
+            
+            
 
         </div>
         <script>

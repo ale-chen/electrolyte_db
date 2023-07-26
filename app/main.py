@@ -5,8 +5,10 @@ import sqlite3
 import re
 from collections import Counter
 from typing import List, Optional
+import asyncio
+from datetime import datetime
 
-from fastapi import FastAPI, File, Form, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
@@ -397,6 +399,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+async def write_excel():
+    def get_the_time():
+        now = datetime.now("%Y-%m-%d_%H-%M-%S")
+        return now.strftime()
+    conn = sqlite3.connect(DB)
+
+    # List your tables here
+    tables = ["electrolytes", "electrolyte_components", "components"]
+    with pd.ExcelWriter('/app/history/tables.xlsx') as writer:
+        for table in tables:
+            df = pd.read_sql_query(f"SELECT * from {table}", conn)
+            df.to_excel(writer, sheet_name=table, index = False)
+
+    conn.close()
+    file_name = f"table_{get_the_time()}.xlsx"
+    return FileResponse('tables.xlsx', media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=file_name)
+
+async def save_tables():
+    while True:
+        await write_excel()
+        await asyncio.sleep(60)
+
+@app.on_event("startup")
+async def startup_event():
+    bg_tasks = BackgroundTasks()
+    bg_tasks.add_task(write_excel)
+
 app.mount("/static", StaticFiles(directory="../static"), name="static")
 
 templates = Jinja2Templates(directory="../templates")
@@ -520,8 +549,21 @@ async def download_excel():
     with pd.ExcelWriter('tables.xlsx') as writer:
         for table in tables:
             df = pd.read_sql_query(f"SELECT * from {table}", conn)
-            df.to_excel(writer, sheet_name=table)
+            df.to_excel(writer, sheet_name=table, index = False)
 
     conn.close()
 
     return FileResponse('tables.xlsx', media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename='tables.xlsx')
+
+@app.post("/upload_excel/")
+async def upload_excel(file: UploadFile = File(...)):
+    df_dict = pd.read_excel(file.file, sheet_name=None)
+
+    conn = sqlite3.connect(DB)
+
+    for table_name, df in df_dict.items():
+        df.to_sql(table_name, conn, if_exists='append', index=False)
+
+    conn.close()
+
+    return {"detail": "Data successfully uploaded from Excel file"}
