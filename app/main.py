@@ -407,14 +407,15 @@ async def write_excel():
 
     # List your tables here
     file_name = f"table_{get_the_time()}.xlsx"
+    filepath = '/app/my_project/app/history/' + file_name
     tables = ["electrolytes", "electrolyte_components", "components"]
-    with pd.ExcelWriter('/app/my_project/app/history/' + file_name) as writer:
+    with pd.ExcelWriter(filepath) as writer:
         for table in tables:
             df = pd.read_sql_query(f"SELECT * from {table}", conn)
             df.to_excel(writer, sheet_name=table, index = False)
 
     conn.close()
-    return FileResponse('tables.xlsx', media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=file_name)
+    return FileResponse(filepath, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=file_name)
 
 async def save_tables():
     while True:
