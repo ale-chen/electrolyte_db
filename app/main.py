@@ -407,7 +407,7 @@ async def write_excel():
 
     # List your tables here
     tables = ["electrolytes", "electrolyte_components", "components"]
-    with pd.ExcelWriter('/app/history/tables.xlsx') as writer:
+    with pd.ExcelWriter('/history/tables.xlsx') as writer:
         for table in tables:
             df = pd.read_sql_query(f"SELECT * from {table}", conn)
             df.to_excel(writer, sheet_name=table, index = False)
