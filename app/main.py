@@ -402,12 +402,12 @@ app.add_middleware(
 async def write_excel():
     def get_the_time():
         now = datetime.now("%Y-%m-%d_%H-%M-%S")
-        return now.strftime()
+        return str(now.strftime())
     conn = sqlite3.connect(DB)
 
     # List your tables here
     file_name = f"table_{get_the_time()}.xlsx"
-    filepath = '/history/' + file_name
+    filepath = '/app/my_project/app/history/' + file_name
     tables = ["electrolytes", "electrolyte_components", "components"]
     with pd.ExcelWriter(filepath) as writer:
         for table in tables:
