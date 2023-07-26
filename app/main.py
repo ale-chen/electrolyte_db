@@ -424,7 +424,7 @@ async def save_tables():
 @app.on_event("startup")
 async def startup_event():
     bg_tasks = BackgroundTasks()
-    bg_tasks.add_task(write_excel)
+    bg_tasks.add_task(save_tables)
 
 app.mount("/static", StaticFiles(directory="../static"), name="static")
 
