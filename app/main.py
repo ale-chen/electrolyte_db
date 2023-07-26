@@ -406,14 +406,14 @@ async def write_excel():
     conn = sqlite3.connect(DB)
 
     # List your tables here
+    file_name = f"table_{get_the_time()}.xlsx"
     tables = ["electrolytes", "electrolyte_components", "components"]
-    with pd.ExcelWriter('/history/tables.xlsx') as writer:
+    with pd.ExcelWriter('/history/' + file_name) as writer:
         for table in tables:
             df = pd.read_sql_query(f"SELECT * from {table}", conn)
             df.to_excel(writer, sheet_name=table, index = False)
 
     conn.close()
-    file_name = f"table_{get_the_time()}.xlsx"
     return FileResponse('tables.xlsx', media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=file_name)
 
 async def save_tables():
