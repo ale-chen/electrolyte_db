@@ -419,7 +419,7 @@ async def write_excel():
 async def save_tables():
     while True:
         await write_excel()
-        await asyncio.sleep(60)
+        await asyncio.sleep(1)
 
 @app.on_event("startup")
 async def startup_event():
