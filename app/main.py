@@ -407,7 +407,7 @@ async def write_excel():
 
     # List your tables here
     file_name = f"table_{get_the_time()}.xlsx"
-    filepath = './history/' + file_name
+    filepath = '/app/my_project/app/history/' + file_name
     tables = ["electrolytes", "electrolyte_components", "components"]
     with pd.ExcelWriter(filepath) as writer:
         for table in tables:
