@@ -4,9 +4,37 @@
 import sqlite3
 import re
 from collections import Counter
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 import asyncio
 from datetime import datetime
+from pydantic import BaseModel
+
+class LogConfig(BaseModel):
+    version: int = 1
+
+    LOGGER_NAME: str = "logger"
+    LOG_FORMAT: str = "%(levelprefix)s | %(asctime)s | %(message)s"
+    LOG_LEVEL: str = "DEBUG"
+
+    # Logging config
+    disable_existing_loggers: bool = False
+    formatters: Dict[str, Dict[str, Any]] = {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": LOG_FORMAT,
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    }
+    handlers: Dict[str, Dict[str, Any]] = {
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+        },
+    }
+    loggers: Dict[str, Dict[str, Any]] = {
+        LOGGER_NAME: {"handlers": ["default"], "level": LOG_LEVEL},
+    }
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +44,12 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from logging.config import dictConfig
+import logging
+
+dictConfig(LogConfig().model_dump())
+logger = logging.getLogger("logger")
+
 
 import pandas as pd
 from urllib.parse import quote
@@ -401,13 +435,13 @@ app.add_middleware(
 
 async def write_excel():
     def get_the_time():
-        now = datetime.now("%Y-%m-%d_%H-%M-%S")
-        return str(now.strftime())
+        now = datetime.now()
+        return str(now.strftime("%Y-%m-%d_%H-%M-%S"))
     conn = sqlite3.connect(DB)
 
     # List your tables here
     file_name = f"table_{get_the_time()}.xlsx"
-    filepath = '/app/my_project/app/history/' + file_name
+    filepath = './history/' + file_name
     tables = ["electrolytes", "electrolyte_components", "components"]
     with pd.ExcelWriter(filepath) as writer:
         for table in tables:
@@ -420,12 +454,13 @@ async def write_excel():
 async def save_tables():
     while True:
         await write_excel()
-        await asyncio.sleep(1)
+        #logger.debug("write_excel run")
+        await asyncio.sleep(3600)
 
 @app.on_event("startup")
 async def startup_event():
-    bg_tasks = BackgroundTasks()
-    bg_tasks.add_task(save_tables)
+    logger.info("Server Started")
+    await save_tables()
 
 app.mount("/static", StaticFiles(directory="../static"), name="static")
 
