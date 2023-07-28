@@ -458,9 +458,9 @@ async def save_tables():
         await asyncio.sleep(3600)
 
 @app.on_event("startup")
-async def startup_event(background_tasks: BackgroundTasks):
+async def startup_event():
     logger.info("Server Started")
-    background_tasks.add_task(save_tables)
+    asyncio.create_task(save_tables())
 
 app.mount("/static", StaticFiles(directory="../static"), name="static")
 
