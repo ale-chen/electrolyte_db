@@ -38,12 +38,10 @@ class LogConfig(BaseModel):
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from logging.config import dictConfig
 import logging
 
@@ -73,7 +71,8 @@ def start_server():
             formula TEXT,
             notes TEXT,
             molar_mass REAL,
-            price REAL
+            price REAL,
+            is_salt INTEGER
             );
             ''')
 
@@ -123,11 +122,12 @@ class Chemical:
     'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm',
     'Bk','Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt',
      'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
-    def __init__(self, formula=' ', notes='', molar_mass=0, price=0):
+    def __init__(self, formula=' ', notes='', molar_mass=0, price=0, is_salt = False):
         self.elements = self.parse_formula(formula)
         self.notes = notes
         self.molar_mass = molar_mass
         self.price = price # PRICE IS IN TERMS OF $/ML AND $/G
+        self.is_salt = is_salt
 
     def parse_formula(self, formula): #recursive function to parse equivalent formulas
         '''
@@ -372,7 +372,7 @@ def add_component_type(
     if(len(rows) != 0):
       print(f'{str(len(rows))} entries with formula {chemical.__str__()} already in database')
     else:
-      c.execute("INSERT INTO components (formula, notes, molar_mass, price) VALUES (?,?,?,?)", (str(chemical),chemical.notes, chemical.molar_mass, chemical.price))
+      c.execute("INSERT INTO components (formula, notes, molar_mass, price, is_salt) VALUES (?,?,?,?,?)", (str(chemical),chemical.notes, chemical.molar_mass, chemical.price, chemical.is_salt))
       conn.commit()
       conn.close()
 
@@ -546,15 +546,17 @@ async def input_component(
     formula: Optional[str] = Form(...),
     notes: Optional[str] = Form(None),
     molar_mass: Optional[float] = Form(...),
-    price: Optional[float] = Form(...)
+    price: Optional[float] = Form(...),
+    is_salt: Optional[bool] = Form(...),
 ):
     try:
+        _is_salt = is_salt == "on"
         response_str = 'Success!'
-        component = Chemical(formula, notes, molar_mass, price)
+        component = Chemical(formula, notes, molar_mass, price, _is_salt)
         add_component_type(component)
 
     except Exception as e:
-        response_str = "Error Occurred, see message and try again: " + e.args[0]
+        response_str = "Error Occurred, see message and try again: " + str(e.args[0])
     encoded_message = quote(response_str)
 
     url = f"{app.url_path_for('input_component_form')}?message={encoded_message}"
