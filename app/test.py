@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse
 
 from urllib.parse import quote
 
-DB = 'experiment_db.sqlite'
+DB = 'db/experiment_db.sqlite'
 
 def start_server():
     conn = sqlite3.connect(DB)

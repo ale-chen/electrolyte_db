@@ -52,7 +52,7 @@ logger = logging.getLogger("logger")
 import pandas as pd
 from urllib.parse import quote
 
-DB = 'experiment_db.sqlite'
+DB = 'db/experiment_db.sqlite'
 
 class Chemical:
     '''
