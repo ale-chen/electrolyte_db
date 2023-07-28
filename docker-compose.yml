@@ -9,3 +9,4 @@ services:
       - "8000:8000"
     volumes:
       - ./history:/app/my_project/app/history
+      - ./db:/app/my_project/app
