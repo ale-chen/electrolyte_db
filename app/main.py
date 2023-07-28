@@ -54,60 +54,6 @@ from urllib.parse import quote
 
 DB = 'experiment_db.sqlite'
 
-def start_server():
-    '''
-    used in test.py to start sqlite server with tables
-    '''
-
-    conn = sqlite3.connect(DB)
-    c = conn.cursor()
-
-    #THIS DATABASE IS A LOOKUP TABLE FOR COMPONENTS
-    #NEEDS STRICT CONVENTIONS FOR FORMULA FORMATTING
-    c.execute('''
-            CREATE TABLE IF NOT EXISTS components
-            (
-            id INTEGER PRIMARY KEY,
-            formula TEXT,
-            notes TEXT,
-            molar_mass REAL,
-            price REAL,
-            is_salt INTEGER
-            );
-            ''')
-
-    #NEEDS SPECIFICATION FOR DECIMAL
-    #THIS TABLE IS FOR THE LIST OF ACTUAL COMPONENTS IN ELECTROLYTES
-    c.execute('''
-    CREATE TABLE IF NOT EXISTS electrolyte_components (
-        electrolyte_id INT,
-        component_id INT,
-        amount REAL,
-        PRIMARY KEY (electrolyte_id, component_id),
-        FOREIGN KEY (electrolyte_id) REFERENCES electrolytes(id),
-        FOREIGN KEY (component_id) REFERENCES components(id)
-    );
-            ''')
-    #THIS TABLE IS FOR THE LIST OF ACTUAL ELECTROLYTES THINK ABOUT REMOVING FORMULA
-
-    c.execute('''
-    CREATE TABLE IF NOT EXISTS electrolytes (
-        id INTEGER PRIMARY KEY,
-        conductivity REAL,
-        conduct_uncert_bound REAL,
-        concent_uncert_bound REAL,
-
-        density REAL,
-        temperature REAL,
-        viscosity REAL,
-        v_window_low_bound REAL,
-        v_window_high_bound REAL,
-        surface_tension REAL
-    );
-    ''')
-    conn.commit()
-    conn.close()
-
 class Chemical:
     '''
     Object to process chemical component types; takes in chemical formulas, and stores dictionary, 'elements,'
