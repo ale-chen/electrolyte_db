@@ -409,6 +409,11 @@ async def startup_event():
     asyncio.create_task(save_tables())
 
 app.mount("/static", StaticFiles(directory="../static"), name="static")
+app.mount("/favicon.ico", StaticFiles(directory="../static"), name="favicon")
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse('../static/favicon.ico', media_type='image/vnd.microsoft.icon')
 
 templates = Jinja2Templates(directory="../templates")
 
