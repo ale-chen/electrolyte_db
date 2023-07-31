@@ -320,7 +320,7 @@ def add_component_type(
     else:
       c.execute("INSERT INTO components (formula, notes, molar_mass, price, is_salt) VALUES (?,?,?,?,?)", (str(chemical),chemical.notes, chemical.molar_mass, chemical.price, chemical.is_salt))
       conn.commit()
-      conn.close()
+    conn.close()
 
 def get_component_type(
     formula: str
@@ -367,7 +367,7 @@ def remove_component_type(
         c.execute("DELETE FROM components WHERE formula = ?", (formatted,))
         print("Deleted " + str(len(fetched)) + f" entries for formula {formula}.")
         conn.commit()
-        conn.close()
+    conn.close()
 
 app = FastAPI()
 
