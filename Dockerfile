@@ -29,4 +29,8 @@ EXPOSE 8000
 
 RUN chmod +x start.sh
 
+# Change the owner and permissions of the SQLite database file
+RUN chown -R www-data:www-data /app/my_project/app/db
+RUN chmod 666 /app/my_project/app/db/experiment_db.sqlite
+
 CMD ["./start.sh"]
