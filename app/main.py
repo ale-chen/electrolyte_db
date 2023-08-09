@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime
 from pydantic import BaseModel
 
-class LogConfig(BaseModel):
+class LogConfig(BaseModel): 
     version: int = 1
 
     LOGGER_NAME: str = "logger"
@@ -498,7 +498,7 @@ async def input_component(
     notes: Optional[str] = Form(None),
     molar_mass: Optional[float] = Form(...),
     price: Optional[float] = Form(...),
-    is_salt: Optional[bool] = Form(...),
+    is_salt: Optional[bool] = Form(None),
 ):
     try:
         _is_salt = is_salt == "on"
