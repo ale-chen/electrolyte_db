@@ -145,31 +145,36 @@ def get_electrolyte_by_components(components: dict):
     takes in dictionary of components and amounts, ex: {"formula1": 3.23, "formula2": .57}
     returns id of an electrolyte.
     '''
-    conn = sqlite3.connect(DB)
-    c = conn.cursor()
+    conn = sqlite3.connect(DB, isolation_level='IMMEDIATE')
+    try:
+        c = conn.cursor()
 
-    #creating long query string with all the requirements for amount and formula
-    query_string = "SELECT e.id FROM electrolytes e WHERE e.id IN (SELECT ec.electrolyte_id FROM electrolyte_components ec WHERE "
-    query_conditions = []
-    query_values = []
-    for formula, amount in components.items():
-        chemical = Chemical(formula)
-        query_conditions.append("(ec.component_id = (SELECT id FROM components WHERE formula = ?) AND ec.amount = ?)")
-        query_values.extend([str(chemical), amount])
-    query_string += " OR ".join(query_conditions) + " GROUP BY ec.electrolyte_id HAVING COUNT(ec.electrolyte_id) = ?)"
-    query_values.append(len(components))
+        #creating long query string with all the requirements for amount and formula
+        query_string = "SELECT e.id FROM electrolytes e WHERE e.id IN (SELECT ec.electrolyte_id FROM electrolyte_components ec WHERE "
+        query_conditions = []
+        query_values = []
+        for formula, amount in components.items():
+            chemical = Chemical(formula)
+            query_conditions.append("(ec.component_id = (SELECT id FROM components WHERE formula = ?) AND ec.amount = ?)")
+            query_values.extend([str(chemical), amount])
+        query_string += " OR ".join(query_conditions) + " GROUP BY ec.electrolyte_id HAVING COUNT(ec.electrolyte_id) = ?)"
+        query_values.append(len(components))
 
-    c.execute(query_string, query_values)
-    candidate_ids = [row[0] for row in c.fetchall()]
+        c.execute(query_string, query_values)
+        candidate_ids = [row[0] for row in c.fetchall()]
 
-    #check that each candidate id doesn't have extra components
-    
-    for id in candidate_ids:
-        c.execute("SELECT COUNT(*) FROM Electrolyte_Components WHERE Electrolyte_ID = ?", (id,))
-        if c.fetchone()[0] != len(components):
-            candidate_ids.remove(id)
-    conn.commit()
-    conn.close()
+        #check that each candidate id doesn't have extra components
+        
+        for id in candidate_ids:
+            c.execute("SELECT COUNT(*) FROM Electrolyte_Components WHERE Electrolyte_ID = ?", (id,))
+            if c.fetchone()[0] != len(components):
+                candidate_ids.remove(id)
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
     
     if(len(candidate_ids) > 1):
         raise ValueError(f"{len(candidate_ids)} total duplicate electrolytes found with components {str(components)}")
@@ -196,55 +201,60 @@ def add_electrolyte(components: dict,
     if(check_electrolyte_exists(components)):
         raise ValueError(f'Electrolyte with formula {components} already exists')
     conn = sqlite3.connect(DB)
-    c = conn.cursor()
-
-    attr_dict = {
-        'conductivity': conductivity,
-        'conduct_uncert_bound': conduct_uncert_bound,
-        'concent_uncert_bound': concent_uncert_bound,
-        'density': density,
-        'temperature': temperature,
-        'viscosity': viscosity,
-        'v_window_low_bound': v_window_low_bound,
-        'v_window_high_bound': v_window_high_bound,
-        'surface_tension': surface_tension,
-    }
-
-    c.execute(f'''INSERT INTO electrolytes {tuple(attr_dict.keys())} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
-    , tuple(attr_dict.values()))
-
-    conn.commit()
-
-    #GET ID BACK FROM ELECTROLYTES TABLE BY CHECKING ALL ATTRIBUTES
-    # Generate the parts of the WHERE clause
-    clauses = [f"{attr} = ?" for attr in attr_dict.keys()]
-    where_clause = " AND ".join(clauses)
-
-    query = f"SELECT id FROM electrolytes WHERE {where_clause}"
-    
-    c.execute(query, tuple(attr_dict.values()))
     try:
-        matched_ids = c.fetchall()[0]
-    except:
-        matched_ids = []
+        c = conn.cursor()
 
-    c.execute('SELECT MAX(id) FROM electrolytes')
-    electrolyte_id = c.fetchone()[0]
+        attr_dict = {
+            'conductivity': conductivity,
+            'conduct_uncert_bound': conduct_uncert_bound,
+            'concent_uncert_bound': concent_uncert_bound,
+            'density': density,
+            'temperature': temperature,
+            'viscosity': viscosity,
+            'v_window_low_bound': v_window_low_bound,
+            'v_window_high_bound': v_window_high_bound,
+            'surface_tension': surface_tension,
+        }
 
-    if (electrolyte_id in matched_ids) and electrolyte_id != matched_ids:
-      matched_ids.remove(electrolyte_id)
-      print(f"Electrolytes with id(s): {matched_ids} have exactly identical attributes.")
+        c.execute(f'''INSERT INTO electrolytes {tuple(attr_dict.keys())} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+        , tuple(attr_dict.values()))
 
-    for formula, amount in components.items():
-        chemical = Chemical(formula)
-        c.execute("SELECT ID FROM components WHERE formula=?", (str(chemical),))
-
-        component_id = c.fetchone()[0]
-        print(electrolyte_id,component_id,amount)
-        c.execute("INSERT INTO electrolyte_components (electrolyte_id, component_id, amount) VALUES (?, ?, ?)",
-                  (electrolyte_id, component_id, amount))
         conn.commit()
-    conn.close()
+
+        #GET ID BACK FROM ELECTROLYTES TABLE BY CHECKING ALL ATTRIBUTES
+        # Generate the parts of the WHERE clause
+        clauses = [f"{attr} = ?" for attr in attr_dict.keys()]
+        where_clause = " AND ".join(clauses)
+
+        query = f"SELECT id FROM electrolytes WHERE {where_clause}"
+        
+        c.execute(query, tuple(attr_dict.values()))
+        try:
+            matched_ids = list(c.fetchall()[0])
+        except:
+            matched_ids = []
+
+        c.execute('SELECT MAX(id) FROM electrolytes')
+        electrolyte_id = c.fetchone()[0]
+
+        if (electrolyte_id in matched_ids) and electrolyte_id != matched_ids:
+            matched_ids.remove(electrolyte_id)
+            print(f"Electrolytes with id(s): {matched_ids} have exactly identical attributes.")
+
+        for formula, amount in components.items():
+            chemical = Chemical(formula)
+            c.execute("SELECT ID FROM components WHERE formula=?", (str(chemical),))
+
+            component_id = c.fetchone()[0]
+            print(electrolyte_id,component_id,amount)
+            c.execute("INSERT INTO electrolyte_components (electrolyte_id, component_id, amount) VALUES (?, ?, ?)",
+                    (electrolyte_id, component_id, amount))
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def check_electrolyte_exists(components: dict):
     '''
@@ -252,54 +262,61 @@ def check_electrolyte_exists(components: dict):
     '''
 
     conn = sqlite3.connect(DB)
-    c = conn.cursor()
+    try:
+        c = conn.cursor()
 
-    #long query string
-    query_string = "SELECT e.id FROM electrolytes e WHERE e.id IN (SELECT ec.electrolyte_id FROM electrolyte_components ec WHERE "
-    query_conditions = []
-    query_values = []
-    for formula, amount in components.items():
-        chemical = Chemical(formula)
-        query_conditions.append("(ec.component_id = (SELECT ID FROM components WHERE formula = ?) AND ec.amount = ?)")
-        query_values.extend([str(chemical), amount])
-    query_string += " OR ".join(query_conditions) + " GROUP BY ec.electrolyte_id HAVING COUNT(ec.electrolyte_id) = ?)"
-    query_values.append(len(components))
+        #long query string
+        query_string = "SELECT e.id FROM electrolytes e WHERE e.id IN (SELECT ec.electrolyte_id FROM electrolyte_components ec WHERE "
+        query_conditions = []
+        query_values = []
+        for formula, amount in components.items():
+            chemical = Chemical(formula)
+            query_conditions.append("(ec.component_id = (SELECT ID FROM components WHERE formula = ?) AND ec.amount = ?)")
+            query_values.extend([str(chemical), amount])
+        query_string += " OR ".join(query_conditions) + " GROUP BY ec.electrolyte_id HAVING COUNT(ec.electrolyte_id) = ?)"
+        query_values.append(len(components))
 
-    c.execute(query_string, query_values)
-    candidate_ids = [row[0] for row in c.fetchall()]
+        c.execute(query_string, query_values)
+        candidate_ids = [row[0] for row in c.fetchall()]
 
-    #check that each candidate id doesn't have extra components
-    for id in candidate_ids:
-        c.execute("SELECT COUNT(*) FROM Electrolyte_Components WHERE Electrolyte_ID = ?", (id,))
-        if c.fetchone()[0] != len(components):
-            candidate_ids.remove(id)
-    conn.commit()
-    conn.close()
-
-    # If we have at least one result, the electrolyte exists
-    return len(candidate_ids) > 0
+        #check that each candidate id doesn't have extra components
+        for id in candidate_ids:
+            c.execute("SELECT COUNT(*) FROM Electrolyte_Components WHERE Electrolyte_ID = ?", (id,))
+            if c.fetchone()[0] != len(components):
+                candidate_ids.remove(id)
+        conn.commit()
+        # If we have at least one result, the electrolyte exists
+        return len(candidate_ids) > 0
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def get_components_by_id(electrolyte_id):
     '''
     takes in electrolyte id, and returns dictionary of components and amounts per component
     '''
     conn = sqlite3.connect(DB)
-    c = conn.cursor()
+    try:
+        c = conn.cursor()
 
-    query = """
-    SELECT c.formula, ec.amount
-    FROM electrolyte_components ec 
-    JOIN components c ON ec.component_id = c.id
-    WHERE ec.electrolyte_id = ?
-    """
+        query = """
+        SELECT c.formula, ec.amount
+        FROM electrolyte_components ec 
+        JOIN components c ON ec.component_id = c.id
+        WHERE ec.electrolyte_id = ?
+        """
 
-    c.execute(query, (electrolyte_id,))
-    result = c.fetchall()
-
-    conn.close()
-
-    # Return the components
-    return {row[0]: row[1] for row in result}
+        c.execute(query, (electrolyte_id,))
+        result = c.fetchall()
+        # Return the components
+        return {row[0]: row[1] for row in result}
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def add_component_type(
     chemical: Chemical
@@ -308,19 +325,24 @@ def add_component_type(
     self-evident--only takes in Chemical class
     '''
     conn = sqlite3.connect(DB)
-    c = conn.cursor()
+    try:
+        c = conn.cursor()
 
-    #check if chemical is already in database
-    c.execute("SELECT * FROM components WHERE formula = ?", (chemical.__str__(),))
-    conn.commit()
-    rows = c.fetchall()
+        #check if chemical is already in database
+        c.execute("SELECT * FROM components WHERE formula = ?", (chemical.__str__(),))
+        conn.commit()
+        rows = c.fetchall()
 
-    if(len(rows) != 0):
-      print(f'{str(len(rows))} entries with formula {chemical.__str__()} already in database')
-    else:
-      c.execute("INSERT INTO components (formula, notes, molar_mass, price, is_salt) VALUES (?,?,?,?,?)", (str(chemical),chemical.notes, chemical.molar_mass, chemical.price, chemical.is_salt))
-      conn.commit()
-    conn.close()
+        if(len(rows) != 0):
+            print(f'{str(len(rows))} entries with formula {chemical.__str__()} already in database')
+        else:
+            c.execute("INSERT INTO components (formula, notes, molar_mass, price, is_salt) VALUES (?,?,?,?,?)", (str(chemical),chemical.notes, chemical.molar_mass, chemical.price, chemical.is_salt))
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def get_component_type(
     formula: str
@@ -331,21 +353,25 @@ def get_component_type(
     formatted_formula = Chemical(formula).__str__()
 
     conn = sqlite3.connect(DB)
-    c = conn.cursor()
+    try:
+        c = conn.cursor()
 
-    c.execute("SELECT * FROM components WHERE formula = ?", (Chemical(formula).__str__(),))
-    conn.commit()
-    rows = c.fetchall()
+        c.execute("SELECT * FROM components WHERE formula = ?", (Chemical(formula).__str__(),))
+        conn.commit()
+        rows = c.fetchall()
 
-    if len(rows) > 1:
-        print(f'Multiple components found for formula {formula}')
-    elif len(rows) == 0:
-        print(f'No components found for formula {formula}')
-    else:
-        print(rows[0][1], rows[0][2], rows[0][3], rows[0][4])
-        return Chemical(rows[0][1], rows[0][2], rows[0][3], rows[0][4])
-    
-    conn.close()
+        if len(rows) > 1:
+            print(f'Multiple components found for formula {formula}')
+        elif len(rows) == 0:
+            print(f'No components found for formula {formula}')
+        else:
+            print(rows[0][1], rows[0][2], rows[0][3], rows[0][4])
+            return Chemical(rows[0][1], rows[0][2], rows[0][3], rows[0][4])
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def remove_component_type(
     formula: str
@@ -354,20 +380,39 @@ def remove_component_type(
     removes component from table just from formula
     '''
     conn = sqlite3.connect(DB)
-    c = conn.cursor()
+    try:
+        c = conn.cursor()
 
-    formatted = Chemical(formula).__str__()
+        formatted = Chemical(formula).__str__()
+        print(formatted)
 
-    c.execute("SELECT * FROM components WHERE formula = ?", (formatted,))
-    conn.commit()
-    fetched = c.fetchall()
-    if len(fetched) == 0:
-        print(f'No components found for formula {formula}')
-    else:
-        c.execute("DELETE FROM components WHERE formula = ?", (formatted,))
-        print("Deleted " + str(len(fetched)) + f" entries for formula {formula}.")
+        c.execute("SELECT * FROM components WHERE formula = ?", (formatted,))
         conn.commit()
-    conn.close()
+        fetched = c.fetchall()
+        if len(fetched) == 0:
+            print(f'No components found for formula {formula}')
+        else:
+            c.execute("DELETE FROM components WHERE formula = ?", (formatted,))
+            print("Deleted " + str(len(fetched)) + f" entries for formula {formula}.")
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+def remove_electrolyte_by_id(id:int):
+    conn = sqlite3.connect(DB)
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM electrolytes WHERE id=?", (id,))
+        c.execute("DELETE FROM electrolyte_components WHERE electrolyte_id=?", (id,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 app = FastAPI()
 
